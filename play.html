@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Play - Quizzard</title>
+  </head>
+  <body>
+    <div id="app" class="min-h-screen p-4 flex flex-col">
+      <!-- Join State -->
+      <div id="join-view" class="flex-1 flex flex-col items-center justify-center">
+        <h1 class="text-3xl font-bold text-purple-500 mb-2">Join Quiz</h1>
+        <p class="text-gray-400 mb-8">Game code: <span id="game-code" class="font-mono text-white"></span></p>
+
+        <input
+          id="player-name"
+          type="text"
+          placeholder="Enter your name"
+          maxlength="20"
+          class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-xl text-center focus:outline-none focus:border-purple-500 mb-4"
+        />
+
+        <button
+          id="join-btn"
+          class="w-full max-w-sm bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+        >
+          JOIN GAME
+        </button>
+
+        <p id="join-error" class="text-red-500 text-center mt-4 hidden"></p>
+      </div>
+
+      <!-- Waiting State -->
+      <div id="waiting-view" class="hidden flex-1 flex flex-col items-center justify-center">
+        <div class="animate-pulse-scale">
+          <div class="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center mb-8">
+            <span class="text-4xl">&#128640;</span>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">You're in!</h2>
+        <p class="text-gray-400 mb-4">Welcome, <span id="player-name-display" class="text-white"></span></p>
+        <p class="text-gray-500">Waiting for host to start...</p>
+      </div>
+
+      <!-- Question State -->
+      <div id="question-view" class="hidden flex-1 flex flex-col">
+        <!-- Timer -->
+        <div class="text-center mb-4">
+          <span class="text-4xl font-bold" id="timer">20</span>
+        </div>
+
+        <!-- Timer Bar -->
+        <div class="w-full bg-gray-800 rounded-full h-2 mb-6">
+          <div id="timer-bar" class="timer-bar" style="width: 100%"></div>
+        </div>
+
+        <!-- Question Text -->
+        <h2 id="question-text" class="text-xl font-bold text-center mb-6"></h2>
+
+        <!-- Answer Buttons -->
+        <div class="flex-1 flex flex-col gap-3">
+          <button id="answer-0" class="answer-red flex-1 rounded-xl text-xl font-bold flex items-center justify-center min-h-[60px]">
+            <span class="mr-3 text-2xl">&#9650;</span>
+            <span class="option-text"></span>
+          </button>
+          <button id="answer-1" class="answer-blue flex-1 rounded-xl text-xl font-bold flex items-center justify-center min-h-[60px]">
+            <span class="mr-3 text-2xl">&#9670;</span>
+            <span class="option-text"></span>
+          </button>
+          <button id="answer-2" class="answer-yellow flex-1 rounded-xl text-xl font-bold flex items-center justify-center min-h-[60px]">
+            <span class="mr-3 text-2xl">&#9679;</span>
+            <span class="option-text"></span>
+          </button>
+          <button id="answer-3" class="answer-green flex-1 rounded-xl text-xl font-bold flex items-center justify-center min-h-[60px]">
+            <span class="mr-3 text-2xl">&#9632;</span>
+            <span class="option-text"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Answered State -->
+      <div id="answered-view" class="hidden flex-1 flex flex-col items-center justify-center">
+        <div class="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mb-8">
+          <span class="text-4xl">&#10003;</span>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">Answer locked in!</h2>
+        <p class="text-gray-400">Waiting for results...</p>
+      </div>
+
+      <!-- Reveal State -->
+      <div id="reveal-view" class="hidden flex-1 flex flex-col items-center justify-center">
+        <!-- Result Icon -->
+        <div id="result-icon" class="w-32 h-32 rounded-full flex items-center justify-center mb-6"></div>
+
+        <!-- Points -->
+        <div id="points-earned" class="text-4xl font-bold mb-4"></div>
+
+        <!-- Current Score & Rank -->
+        <p class="text-gray-400">
+          Total: <span id="total-score" class="text-white font-bold"></span> points
+        </p>
+        <p class="text-gray-400">
+          Rank: <span id="current-rank" class="text-purple-500 font-bold"></span>
+        </p>
+      </div>
+
+      <!-- Final State -->
+      <div id="final-view" class="hidden flex-1 flex flex-col items-center justify-center">
+        <!-- Trophy for top 3 -->
+        <div id="trophy-container" class="mb-6"></div>
+
+        <h1 class="text-3xl font-bold mb-2">Game Over!</h1>
+
+        <div class="text-6xl font-bold text-purple-500 mb-2" id="final-rank"></div>
+        <p class="text-gray-400 mb-4">
+          Final Score: <span id="final-score" class="text-white font-bold"></span>
+        </p>
+
+        <button
+          id="play-again-btn"
+          class="mt-8 bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+        >
+          PLAY AGAIN
+        </button>
+      </div>
+    </div>
+    <script type="module" src="/src/play.ts"></script>
+  </body>
+</html>

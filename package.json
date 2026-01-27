@@ -1,0 +1,26 @@
+{
+  "name": "quizzard",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Real-time quiz app for live events. Kahoot/Mentimeter alternative.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/qrcode": "^1.5.6",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.93.1",
+    "js-yaml": "^4.1.1",
+    "qrcode": "^1.5.4"
+  }
+}

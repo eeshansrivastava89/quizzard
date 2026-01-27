@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+body {
+  @apply bg-gray-900 text-white min-h-screen;
+}
+
+/* Answer button colors */
+.answer-red { @apply bg-red-500 hover:bg-red-600; }
+.answer-blue { @apply bg-blue-500 hover:bg-blue-600; }
+.answer-yellow { @apply bg-yellow-500 hover:bg-yellow-600 text-gray-900; }
+.answer-green { @apply bg-green-500 hover:bg-green-600; }
+
+/* Animations */
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes confetti {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+}
+
+.animate-confetti {
+  animation: confetti 3s ease-out forwards;
+}
+
+/* Timer styles */
+.timer-bar {
+  @apply h-2 bg-purple-600 rounded-full transition-all duration-100;
+}
+
+.timer-bar.warning {
+  @apply bg-yellow-500;
+}
+
+.timer-bar.danger {
+  @apply bg-red-500;
+}
+
+/* Leaderboard podium */
+.podium-gold { @apply bg-yellow-400 text-gray-900; }
+.podium-silver { @apply bg-gray-300 text-gray-900; }
+.podium-bronze { @apply bg-amber-600; }
