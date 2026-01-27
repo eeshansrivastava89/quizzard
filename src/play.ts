@@ -150,6 +150,17 @@ function setupJoinForm() {
     joinBtn.textContent = 'Joining...'
 
     try {
+      // Check player cap (180 to stay under Supabase free tier limit)
+      const { count } = await supabase
+        .from('quiz_participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('session_id', session!.id)
+
+      if (count !== null && count >= 180) {
+        showError(joinError, 'Game is full (180 players max)')
+        return
+      }
+
       const { data, error } = await supabase
         .from('quiz_participants')
         .insert({

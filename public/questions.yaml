@@ -4,6 +4,11 @@ quiz:
   base_points: 1000
 
 questions:
+  - text: "What animal is shown in this image?"
+    image: "/images/cat.jpg"
+    options: ["Dog", "Cat", "Rabbit", "Hamster"]
+    correct: 1
+
   - text: "What is the capital of France?"
     options: ["London", "Paris", "Berlin", "Madrid"]
     correct: 1
