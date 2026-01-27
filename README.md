@@ -2,74 +2,65 @@
 
 Real-time quiz app for live events. A Kahoot/Mentimeter alternative.
 
+**Live:** https://quizzard.fly.dev
+
 ## Features
 
-- Host quizzes with QR code join
-- Real-time participant sync
+- QR code join for players
+- Real-time sync (Supabase Realtime)
 - Kahoot-style scoring (faster = more points)
-- Mobile-friendly player view
-- Leaderboard with podium display
-- Sound effects
+- Image question support
+- 180 player cap (Supabase free tier)
+- Auto-deploy via GitHub Actions
 
-## Tech Stack
+## Requirements
 
-- **Frontend:** Vite + TypeScript + Tailwind CSS
-- **Backend:** Supabase (Postgres + Realtime)
-- **Hosting:** Fly.io
+- **Supabase** project (Postgres + Realtime) - set up your own tables
+- **Fly.io** or any static host (Vercel, Netlify, etc.)
 
 ## Quick Start
 
 ```bash
-# Install dependencies
 npm install
-
-# Set up environment
-cp .env.example .env
-# Edit .env with your Supabase credentials
-
-# Run locally
+cp .env.example .env  # Add your Supabase credentials
 npm run dev
 ```
 
-## Configuration
+- Host: http://localhost:5173
+- Player: http://localhost:5173/play.html
 
-Edit `questions.yaml` to customize your quiz:
+## Questions Format
+
+Edit `public/questions.yaml`:
 
 ```yaml
 quiz:
   title: "My Quiz"
   default_time_seconds: 20
-  base_points: 1000
 
 questions:
   - text: "What is 2 + 2?"
     options: ["3", "4", "5", "6"]
     correct: 1
     time_seconds: 15
+
+  - text: "What animal is this?"
+    image: "/images/cat.jpg"
+    options: ["Dog", "Cat", "Rabbit"]
+    correct: 1
 ```
 
-## Deployment
+Images go in `public/images/`.
 
-```bash
-# Deploy to Fly.io
-fly launch
-fly deploy
-```
+## Deploy
 
-## Sound Effects Attribution
+Push to `main` → auto-deploys to Fly.io via GitHub Actions.
 
-All sound effects used in this project are **free to use** and **not proprietary**. They are sourced from the following open/free resources:
+Manual: `fly deploy`
 
-| Sound | Source | License |
-|-------|--------|---------|
-| Countdown (tick-tock) | [Orange Free Sounds](https://orangefreesounds.com/tick-tock-sound/) | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) |
-| Time's Up (bell) | [Orange Free Sounds](https://orangefreesounds.com/short-gentle-bell-ringing-sound-effect/) | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) |
-| Correct Answer | [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) | Royalty-free / Open source |
-| Wrong Answer | [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) | Royalty-free / Open source |
-| Winner Celebration | [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) | Royalty-free / Open source |
-| Leaderboard Reveal | [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) | Royalty-free / Open source |
+## Sound Effects
 
-**Disclaimer:** These sound effects are distributed under their respective open licenses. No proprietary or copyrighted audio is included in this project. If you redistribute or modify this project, please maintain appropriate attribution as specified by the original licenses.
+Sourced from [Orange Free Sounds](https://orangefreesounds.com) (CC BY-NC 4.0) and [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) (royalty-free).
 
 ## License
 
