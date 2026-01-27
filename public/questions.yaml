@@ -25,7 +25,7 @@ questions:
     correct: 2
 
   - text: "Where is this drink sold? (Which country?)"
-    image: "/images/drink.jpg"
+    image: "/images/drink.png"
     options: ["Japan", "United Kingdom", "South Korea", "China"]
     correct: 0
 
