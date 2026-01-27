@@ -40,7 +40,7 @@ questions:
 
   - text: "What is the highest-altitude Starbucks store in the world?"
     options: ["Cusco, Peru", "Breckenridge, CO", "Quito, Ecuador", "Bern, Switzerland"]
-    correct: 1
+    correct: 0
 
   - text: "What percent of U.S. Starbucks transactions are mobile orders?"
     options: ["~10%", "~30%", "~50%", "~75%"]
