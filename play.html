@@ -4,12 +4,35 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Play - Quizzard</title>
+    <title>Quiz Time - Join Game</title>
   </head>
   <body>
     <div id="app" class="min-h-screen p-4 flex flex-col">
-      <!-- Join State -->
-      <div id="join-view" class="flex-1 flex flex-col items-center justify-center">
+      <!-- Enter Code State (when no code in URL) -->
+      <div id="enter-code-view" class="hidden flex-1 flex flex-col items-center justify-center">
+        <h1 class="text-5xl md:text-7xl font-bold text-purple-500 mb-2">Quiz Time</h1>
+        <p class="text-gray-400 mb-12">Enter the game code to join</p>
+
+        <div class="w-full max-w-sm">
+          <input
+            id="code-input"
+            type="text"
+            placeholder="Enter game code"
+            maxlength="6"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-2xl text-center uppercase tracking-widest focus:outline-none focus:border-purple-500 mb-4"
+          />
+          <button
+            id="code-submit-btn"
+            class="w-full bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+          >
+            JOIN GAME
+          </button>
+          <p id="code-error" class="text-red-500 text-center mt-4 hidden"></p>
+        </div>
+      </div>
+
+      <!-- Join State (when code is provided) -->
+      <div id="join-view" class="hidden flex-1 flex flex-col items-center justify-center">
         <h1 class="text-3xl font-bold text-purple-500 mb-2">Join Quiz</h1>
         <p class="text-gray-400 mb-8">Game code: <span id="game-code" class="font-mono text-white"></span></p>
 

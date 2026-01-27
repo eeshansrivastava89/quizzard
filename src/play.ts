@@ -3,7 +3,6 @@ import { supabase } from './lib/supabase'
 import type { QuizSession, QuizParticipant } from './lib/supabase'
 import { loadQuestions, getQuestionTime } from './lib/questions'
 import type { QuizConfig } from './lib/questions'
-import { sounds } from './lib/sounds'
 
 // State
 let session: QuizSession | null = null
@@ -12,8 +11,13 @@ let config: QuizConfig | null = null
 let timerInterval: number | null = null
 let questionStartTime: number = 0
 let hasAnswered = false
+let joinCode: string | null = null
+
+// Subscription channel for cleanup
+let sessionChannel: ReturnType<typeof supabase.channel> | null = null
 
 // DOM Elements
+const enterCodeViewEl = document.getElementById('enter-code-view')!
 const joinViewEl = document.getElementById('join-view')!
 const waitingViewEl = document.getElementById('waiting-view')!
 const questionViewEl = document.getElementById('question-view')!
@@ -21,18 +25,90 @@ const answeredViewEl = document.getElementById('answered-view')!
 const revealViewEl = document.getElementById('reveal-view')!
 const finalViewEl = document.getElementById('final-view')!
 
+// Cleanup on page unload to prevent memory leaks
+window.addEventListener('beforeunload', cleanup)
+
+function cleanup() {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+  if (sessionChannel) {
+    supabase.removeChannel(sessionChannel)
+    sessionChannel = null
+  }
+}
+
 // Get join code from URL
 const urlParams = new URLSearchParams(window.location.search)
-const joinCode = urlParams.get('code')
+joinCode = urlParams.get('code')
 
 if (!joinCode) {
-  window.location.href = '/'
+  // Show enter code view
+  showEnterCodeView()
 } else {
   document.getElementById('game-code')!.textContent = joinCode
   init()
 }
 
+function showEnterCodeView() {
+  enterCodeViewEl.classList.remove('hidden')
+
+  const codeInput = document.getElementById('code-input') as HTMLInputElement
+  const submitBtn = document.getElementById('code-submit-btn') as HTMLButtonElement
+  const codeError = document.getElementById('code-error') as HTMLParagraphElement
+
+  // Auto-uppercase
+  codeInput.addEventListener('input', () => {
+    codeInput.value = codeInput.value.toUpperCase()
+  })
+
+  submitBtn.addEventListener('click', async () => {
+    const code = codeInput.value.toUpperCase().trim()
+    if (!code || code.length < 4) {
+      showError(codeError, 'Please enter a valid game code')
+      return
+    }
+
+    submitBtn.disabled = true
+    submitBtn.textContent = 'Checking...'
+
+    try {
+      // Verify session exists
+      const { data, error } = await supabase
+        .from('quiz_sessions')
+        .select('id, state')
+        .eq('join_code', code)
+        .single()
+
+      if (error || !data) {
+        showError(codeError, 'Game not found')
+        return
+      }
+
+      if (data.state === 'finished') {
+        showError(codeError, 'This game has ended')
+        return
+      }
+
+      // Redirect with code
+      window.location.href = `/play.html?code=${code}`
+    } catch (e) {
+      showError(codeError, 'Could not connect to game')
+    } finally {
+      submitBtn.disabled = false
+      submitBtn.textContent = 'JOIN GAME'
+    }
+  })
+
+  codeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') submitBtn.click()
+  })
+}
+
 async function init() {
+  joinViewEl.classList.remove('hidden')
+
   try {
     config = await loadQuestions()
     await loadSession()
@@ -40,7 +116,7 @@ async function init() {
   } catch (e) {
     console.error('Failed to initialize:', e)
     alert('Could not connect to game')
-    window.location.href = '/'
+    window.location.href = '/play.html'
   }
 }
 
@@ -123,7 +199,7 @@ function showWaiting() {
 }
 
 function subscribeToSession() {
-  supabase
+  sessionChannel = supabase
     .channel('session')
     .on(
       'postgres_changes',
@@ -159,8 +235,14 @@ function handleStateChange(
 }
 
 function showQuestion(questionIndex: number) {
-  const question = config!.questions[questionIndex]
-  const timeMs = getQuestionTime(question, config!)
+  // Bounds check
+  if (!config || questionIndex >= config.questions.length) {
+    console.error('Invalid question index:', questionIndex)
+    return
+  }
+
+  const question = config.questions[questionIndex]
+  const timeMs = getQuestionTime(question, config)
 
   // Hide other views
   waitingViewEl.classList.add('hidden')
@@ -190,7 +272,11 @@ function startTimer(remainingMs: number, totalMs: number) {
   const timerBarEl = document.getElementById('timer-bar')!
   const endTime = Date.now() + remainingMs
 
-  if (timerInterval) clearInterval(timerInterval)
+  // Clear existing timer properly
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
 
   timerInterval = setInterval(() => {
     const remaining = Math.max(0, endTime - Date.now())
@@ -209,6 +295,7 @@ function startTimer(remainingMs: number, totalMs: number) {
 
     if (remaining === 0) {
       clearInterval(timerInterval!)
+      timerInterval = null
       if (!hasAnswered) {
         disableAnswerButtons()
       }
@@ -235,16 +322,22 @@ async function submitAnswer(optionIndex: number) {
   answeredViewEl.classList.remove('hidden')
 
   // Submit to database
-  try {
-    await supabase.from('quiz_answers').insert({
-      session_id: session!.id,
-      participant_id: participant!.id,
-      question_index: session!.current_question,
-      selected_option: optionIndex,
-      response_time_ms: responseTimeMs
-    })
-  } catch (e) {
-    console.error('Failed to submit answer:', e)
+  const { error } = await supabase.from('quiz_answers').insert({
+    session_id: session!.id,
+    participant_id: participant!.id,
+    question_index: session!.current_question,
+    selected_option: optionIndex,
+    response_time_ms: responseTimeMs
+  })
+
+  if (error) {
+    console.error('Failed to submit answer:', error)
+    // Show error to user but don't block - they'll see 0 points on reveal
+    const answeredText = answeredViewEl.querySelector('h2')
+    if (answeredText) {
+      answeredText.textContent = 'Answer may not have saved!'
+      answeredText.classList.add('text-yellow-500')
+    }
   }
 }
 
@@ -256,7 +349,11 @@ function disableAnswerButtons() {
 }
 
 async function showReveal() {
-  if (timerInterval) clearInterval(timerInterval)
+  // Clear timer
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
 
   answeredViewEl.classList.add('hidden')
   questionViewEl.classList.add('hidden')
@@ -306,14 +403,12 @@ async function showReveal() {
       resultIconEl.innerHTML = '<span class="text-6xl">&#10003;</span>'
       pointsEl.textContent = `+${points.toLocaleString()} points`
       pointsEl.className = 'text-4xl font-bold text-green-500 mb-4'
-      sounds.play('correct')
     } else {
       resultIconEl.className =
         'w-32 h-32 rounded-full flex items-center justify-center bg-red-500'
       resultIconEl.innerHTML = '<span class="text-6xl">&#10007;</span>'
       pointsEl.textContent = 'Wrong!'
       pointsEl.className = 'text-4xl font-bold text-red-500 mb-4'
-      sounds.play('wrong')
     }
   } else {
     resultIconEl.className =
@@ -329,10 +424,16 @@ async function showReveal() {
 }
 
 async function showFinal() {
+  // Clear timer if still running
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+
   revealViewEl.classList.add('hidden')
   finalViewEl.classList.remove('hidden')
 
-  // Get final standings
+  // Get final standings from database for accuracy
   const { data: allParticipants } = await supabase
     .from('quiz_participants')
     .select('id, score')
@@ -341,14 +442,21 @@ async function showFinal() {
 
   const rank =
     (allParticipants?.findIndex((p) => p.id === participant!.id) ?? 0) + 1
-  const finalScore = participant!.score
+
+  // Get fresh score from DB
+  const { data: freshData } = await supabase
+    .from('quiz_participants')
+    .select('score')
+    .eq('id', participant!.id)
+    .single()
+
+  const finalScore = freshData?.score ?? participant!.score
 
   // Trophy for top 3
   const trophyEl = document.getElementById('trophy-container')!
   if (rank <= 3) {
     const trophies = ['&#127942;', '&#129352;', '&#129353;'] // 🏆 🥈 🥉
     trophyEl.innerHTML = `<div class="text-8xl animate-pulse-scale">${trophies[rank - 1]}</div>`
-    sounds.play('winner')
   } else {
     trophyEl.innerHTML = ''
   }
@@ -357,8 +465,9 @@ async function showFinal() {
   document.getElementById('final-score')!.textContent =
     finalScore.toLocaleString()
 
-  // Play again button
+  // Play again button - go back to player join page
   document.getElementById('play-again-btn')!.onclick = () => {
-    window.location.href = '/'
+    cleanup()
+    window.location.href = '/play.html'
   }
 }

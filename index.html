@@ -4,42 +4,21 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quizzard - Live Quiz Game</title>
+    <title>Quiz Time - Host a Live Quiz</title>
   </head>
   <body>
     <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
       <!-- Logo/Title -->
-      <h1 class="text-5xl md:text-7xl font-bold text-purple-500 mb-2">Quizzard</h1>
+      <h1 class="text-5xl md:text-7xl font-bold text-purple-500 mb-2">Quiz Time</h1>
       <p class="text-gray-400 mb-12">Real-time quiz game for live events</p>
 
       <!-- Host Button -->
       <button
         id="host-btn"
-        class="w-full max-w-sm bg-purple-600 hover:bg-purple-700 text-white text-2xl font-bold py-4 px-8 rounded-xl mb-8 transition-all hover:scale-105"
+        class="w-full max-w-sm bg-purple-600 hover:bg-purple-700 text-white text-2xl font-bold py-4 px-8 rounded-xl transition-all hover:scale-105"
       >
         HOST QUIZ
       </button>
-
-      <!-- Join Section -->
-      <div class="w-full max-w-sm">
-        <p class="text-gray-400 text-center mb-4">or join a game</p>
-        <div class="flex gap-2">
-          <input
-            id="join-code"
-            type="text"
-            placeholder="Enter game code"
-            maxlength="6"
-            class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-xl text-center uppercase tracking-widest focus:outline-none focus:border-purple-500"
-          />
-          <button
-            id="join-btn"
-            class="bg-gray-700 hover:bg-gray-600 text-white text-xl font-bold px-6 rounded-xl transition-all"
-          >
-            JOIN
-          </button>
-        </div>
-        <p id="join-error" class="text-red-500 text-center mt-2 hidden"></p>
-      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

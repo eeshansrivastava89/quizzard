@@ -1,4 +1,4 @@
-# Quizzard
+# Quiz Time
 
 Real-time quiz app for live events. A Kahoot/Mentimeter alternative.
 
@@ -63,7 +63,7 @@ All sound effects used in this project are **free to use** and **not proprietary
 | Sound | Source | License |
 |-------|--------|---------|
 | Countdown (tick-tock) | [Orange Free Sounds](https://orangefreesounds.com/tick-tock-sound/) | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) |
-| Time's Up (buzzer) | [Orange Free Sounds](https://orangefreesounds.com/times-up-buzzer-sound-effect/) | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) |
+| Time's Up (bell) | [Orange Free Sounds](https://orangefreesounds.com/short-gentle-bell-ringing-sound-effect/) | [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) |
 | Correct Answer | [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) | Royalty-free / Open source |
 | Wrong Answer | [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) | Royalty-free / Open source |
 | Winner Celebration | [JimLynchCodes/Game-Sound-Effects](https://github.com/JimLynchCodes/Game-Sound-Effects) | Royalty-free / Open source |

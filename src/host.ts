@@ -14,6 +14,10 @@ let answers: QuizAnswer[] = []
 let config: QuizConfig | null = null
 let timerInterval: number | null = null
 
+// Subscription channels for cleanup
+let participantsChannel: ReturnType<typeof supabase.channel> | null = null
+let answersChannel: ReturnType<typeof supabase.channel> | null = null
+
 // DOM Elements
 const loadingEl = document.getElementById('loading')!
 const lobbyEl = document.getElementById('lobby')!
@@ -21,17 +25,45 @@ const questionViewEl = document.getElementById('question-view')!
 const revealViewEl = document.getElementById('reveal-view')!
 const leaderboardViewEl = document.getElementById('leaderboard-view')!
 
+// Cleanup on page unload to prevent memory leaks
+window.addEventListener('beforeunload', cleanup)
+
+function cleanup() {
+  // Clear timer
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+  // Unsubscribe from channels
+  if (participantsChannel) {
+    supabase.removeChannel(participantsChannel)
+    participantsChannel = null
+  }
+  if (answersChannel) {
+    supabase.removeChannel(answersChannel)
+    answersChannel = null
+  }
+  // Stop sounds
+  sounds.stopAll()
+}
+
 // Initialize
 init()
 
 async function init() {
   try {
     config = await loadQuestions()
+
+    // Validate questions exist
+    if (!config.questions || config.questions.length === 0) {
+      throw new Error('No questions found in quiz configuration')
+    }
+
     await createSession()
     setupSubscriptions()
   } catch (e) {
     console.error('Failed to initialize:', e)
-    alert('Failed to create quiz session')
+    alert('Failed to create quiz session: ' + (e instanceof Error ? e.message : 'Unknown error'))
   }
 }
 
@@ -77,7 +109,7 @@ function showLobby() {
 
 function setupSubscriptions() {
   // Subscribe to participants joining
-  supabase
+  participantsChannel = supabase
     .channel('participants')
     .on(
       'postgres_changes',
@@ -96,7 +128,7 @@ function setupSubscriptions() {
     .subscribe()
 
   // Subscribe to answers
-  supabase
+  answersChannel = supabase
     .channel('answers')
     .on(
       'postgres_changes',
@@ -141,6 +173,12 @@ function updateAnswerCount() {
 }
 
 async function startQuiz() {
+  // Double-check we have participants
+  if (participants.length === 0) {
+    alert('Need at least one player to start!')
+    return
+  }
+
   await updateSessionState('question')
   showQuestion()
 }
@@ -171,6 +209,13 @@ async function updateSessionState(
 }
 
 function showQuestion() {
+  // Bounds check for question index
+  if (session!.current_question >= config!.questions.length) {
+    console.error('Invalid question index:', session!.current_question)
+    showLeaderboard()
+    return
+  }
+
   const question = config!.questions[session!.current_question]
   const timeMs = getQuestionTime(question, config!)
 
@@ -219,7 +264,11 @@ function startTimer(durationMs: number) {
   const timerBarEl = document.getElementById('timer-bar')!
   const endTime = Date.now() + durationMs
 
-  if (timerInterval) clearInterval(timerInterval)
+  // Clear existing timer properly
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
 
   timerInterval = setInterval(() => {
     const remaining = Math.max(0, endTime - Date.now())
@@ -239,6 +288,7 @@ function startTimer(durationMs: number) {
 
     if (remaining === 0) {
       clearInterval(timerInterval!)
+      timerInterval = null
       sounds.stop('countdown')
       sounds.play('timesUp')
       showReveal()
@@ -305,6 +355,9 @@ async function calculateAndUpdateScores(
 ) {
   const timeMs = getQuestionTime(question, config!)
 
+  // Process all answers and calculate points
+  const updates: { answerId: string; participantId: string; points: number }[] = []
+
   for (const answer of questionAnswers) {
     const isCorrect = answer.selected_option === question.correct
     const points = calculatePoints(
@@ -314,21 +367,51 @@ async function calculateAndUpdateScores(
       config!.quiz.base_points
     )
 
-    // Update answer with points
+    updates.push({
+      answerId: answer.id,
+      participantId: answer.participant_id,
+      points
+    })
+  }
+
+  // Update answers with points earned
+  for (const update of updates) {
     await supabase
       .from('quiz_answers')
-      .update({ points_earned: points })
-      .eq('id', answer.id)
+      .update({ points_earned: update.points })
+      .eq('id', update.answerId)
+  }
 
-    // Update participant score
-    if (points > 0) {
-      const participant = participants.find((p) => p.id === answer.participant_id)
-      if (participant) {
-        participant.score += points
-        await supabase
+  // Update participant scores using atomic increment to prevent race conditions
+  for (const update of updates) {
+    if (update.points > 0) {
+      // Try atomic increment via RPC function
+      const { error } = await supabase.rpc('increment_score', {
+        participant_id: update.participantId,
+        points_to_add: update.points
+      })
+
+      // If RPC failed (function doesn't exist), fall back to direct update
+      if (error) {
+        console.warn('RPC increment_score failed, using fallback:', error.message)
+        const { data: current } = await supabase
           .from('quiz_participants')
-          .update({ score: participant.score })
-          .eq('id', participant.id)
+          .select('score')
+          .eq('id', update.participantId)
+          .single()
+
+        if (current) {
+          await supabase
+            .from('quiz_participants')
+            .update({ score: current.score + update.points })
+            .eq('id', update.participantId)
+        }
+      }
+
+      // Update local state
+      const participant = participants.find((p) => p.id === update.participantId)
+      if (participant) {
+        participant.score += update.points
       }
     }
   }
@@ -341,14 +424,26 @@ async function nextQuestion() {
 }
 
 async function showLeaderboard() {
+  // Clear timer if still running
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+
   questionViewEl.classList.add('hidden')
   revealViewEl.classList.add('hidden')
   leaderboardViewEl.classList.remove('hidden')
 
   await updateSessionState('leaderboard')
 
-  // Sort by score
-  const sorted = [...participants].sort((a, b) => b.score - a.score)
+  // Fetch fresh scores from database to ensure accuracy
+  const { data: freshParticipants } = await supabase
+    .from('quiz_participants')
+    .select('*')
+    .eq('session_id', session!.id)
+    .order('score', { ascending: false })
+
+  const sorted = freshParticipants || [...participants].sort((a, b) => b.score - a.score)
 
   // Podium (top 3)
   const podiumEl = document.getElementById('podium')!
@@ -392,6 +487,7 @@ async function showLeaderboard() {
 
   // New game button
   document.getElementById('new-game-btn')!.onclick = () => {
+    cleanup()
     window.location.href = '/host.html'
   }
 
