@@ -8,10 +8,10 @@ class SoundManager {
   constructor() {
     this.preload('countdown', '/sounds/countdown.mp3', true)
     this.preload('timesUp', '/sounds/times-up.mp3')
-    this.preload('correct', '/sounds/correct.mp3')
-    this.preload('wrong', '/sounds/wrong.mp3')
-    this.preload('leaderboard', '/sounds/leaderboard.mp3')
-    this.preload('winner', '/sounds/winner.mp3')
+    this.preload('correct', '/sounds/correct.wav')
+    this.preload('wrong', '/sounds/wrong.wav')
+    this.preload('leaderboard', '/sounds/leaderboard.wav')
+    this.preload('winner', '/sounds/winner.wav')
   }
 
   private preload(name: string, src: string, loop = false) {
