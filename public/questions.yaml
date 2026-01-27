@@ -1,32 +1,51 @@
 quiz:
-  title: "Sample Quiz"
+  title: "Starbucks Trivia Quiz"
   default_time_seconds: 20
   base_points: 1000
 
 questions:
-  - text: "What animal is shown in this image?"
-    image: "/images/cat.jpg"
-    options: ["Dog", "Cat", "Rabbit", "Hamster"]
-    correct: 1
-
-  - text: "What is the capital of France?"
-    options: ["London", "Paris", "Berlin", "Madrid"]
-    correct: 1
-    time_seconds: 15
-
-  - text: "Which planet is known as the Red Planet?"
-    options: ["Venus", "Jupiter", "Mars", "Saturn"]
+  - text: "How many stores does Starbucks have worldwide?"
+    options: ["25,500", "33,000", "40,990", "52,000"]
     correct: 2
 
-  - text: "What is 2 + 2?"
-    options: ["3", "4", "5", "6"]
-    correct: 1
-    time_seconds: 10
-
-  - text: "Who painted the Mona Lisa?"
-    options: ["Van Gogh", "Picasso", "Da Vinci", "Michelangelo"]
+  - text: "How many countries does Starbucks operate in?"
+    options: ["62", "75", "88", "104"]
     correct: 2
 
-  - text: "What is the largest ocean on Earth?"
-    options: ["Atlantic", "Indian", "Arctic", "Pacific"]
+  - text: "What percentage of Starbucks beverages are customized/modified?"
+    options: ["~35%", "~45%", "~61%", "~78%"]
+    correct: 2
+
+  - text: "When was the Pumpkin Spice Latte (PSL) first launched?"
+    options: ["1999", "2003", "2007", "2011"]
+    correct: 1
+
+  - text: "How many Pumpkin Spice Lattes were sold in 2025?"
+    options: ["~12 million", "~28 million", "~42 million", "~65 million"]
+    correct: 2
+
+  - text: "Where is this drink sold? (Which country?)"
+    image: "/images/drink.jpg"
+    options: ["Japan", "United Kingdom", "South Korea", "China"]
+    correct: 0
+
+  - text: "Where is this Starbucks store located?"
+    image: "/images/store.jpg"
+    options: ["Dominican Republic", "Costa Rica", "Hawaii", "Florida"]
+    correct: 0
+
+  - text: "How many items are on the Starbucks menu in the US?"
+    options: ["~125", "~661", "~8756", "~1,989"]
+    correct: 1
+
+  - text: "What is the highest-altitude Starbucks store in the world?"
+    options: ["Cusco, Peru", "Breckenridge, CO", "Quito, Ecuador", "Bern, Switzerland"]
+    correct: 1
+
+  - text: "What percent of U.S. Starbucks transactions are mobile orders?"
+    options: ["~10%", "~30%", "~50%", "~75%"]
+    correct: 1
+
+  - text: "Where did the name 'Starbucks' come from?"
+    options: ["Melusine", "The Odyssey", "The Little Mermaid", "Moby Dick"]
     correct: 3
