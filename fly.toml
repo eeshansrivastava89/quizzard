@@ -2,6 +2,9 @@ app = 'quizzard'
 primary_region = 'lax'
 
 [build]
+  [build.args]
+    VITE_SUPABASE_URL = "https://ayosczldjpycqzwrexfu.supabase.co"
+    VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5b3NjemxkanB5Y3F6d3JleGZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0NDU1MTQsImV4cCI6MjA4NDAyMTUxNH0.JBtvPAritXTRG6G9KBLngFKzqUF3-MWscRTi7Ed9KFg"
 
 [http_service]
   internal_port = 8080
