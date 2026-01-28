@@ -112,6 +112,36 @@ async function init() {
   try {
     config = await loadQuestions()
     await loadSession()
+
+    // Check if session is already finished or abandoned
+    if (session!.state === 'finished') {
+      showGameOver('Game has ended', 'This quiz has already finished.')
+      return
+    }
+    if (session!.state === 'abandoned') {
+      showGameOver('Game Ended', 'The host has left the game.')
+      return
+    }
+
+    // Check if player already joined this session (auto-reconnect)
+    const savedPlayerId = localStorage.getItem(`quiz_player_${session!.id}`)
+    if (savedPlayerId) {
+      const { data: existingPlayer } = await supabase
+        .from('quiz_participants')
+        .select('*')
+        .eq('id', savedPlayerId)
+        .single()
+
+      if (existingPlayer && ['lobby', 'question', 'reveal', 'leaderboard'].includes(session!.state)) {
+        participant = existingPlayer as QuizParticipant
+        await reconnectPlayer()
+        return
+      } else {
+        // Player not found, clear localStorage
+        localStorage.removeItem(`quiz_player_${session!.id}`)
+      }
+    }
+
     setupJoinForm()
   } catch (e) {
     console.error('Failed to initialize:', e)
@@ -147,7 +177,7 @@ function setupJoinForm() {
     }
 
     joinBtn.disabled = true
-    joinBtn.textContent = 'Joining...'
+    joinBtn.innerHTML = '<span>JOINING...</span>'
 
     try {
       // Check player cap (180 to stay under Supabase free tier limit)
@@ -172,6 +202,20 @@ function setupJoinForm() {
 
       if (error) {
         if (error.code === '23505') {
+          // Name already taken - try to reconnect as that player
+          const { data: existingPlayer } = await supabase
+            .from('quiz_participants')
+            .select('*')
+            .eq('session_id', session!.id)
+            .eq('name', name)
+            .single()
+
+          if (existingPlayer) {
+            participant = existingPlayer as QuizParticipant
+            localStorage.setItem(`quiz_player_${session!.id}`, participant.id)
+            await reconnectPlayer()
+            return
+          }
           showError(joinError, 'Name already taken')
         } else {
           showError(joinError, 'Could not join game')
@@ -188,7 +232,7 @@ function setupJoinForm() {
       showError(joinError, 'Could not join game')
     } finally {
       joinBtn.disabled = false
-      joinBtn.textContent = 'JOIN GAME'
+      joinBtn.innerHTML = '<span>START GAME</span><span class="text-3xl">→</span>'
     }
   })
 
@@ -209,6 +253,47 @@ function showWaiting() {
   document.getElementById('player-name-display')!.textContent = participant!.name
 }
 
+async function reconnectPlayer() {
+  subscribeToSession()
+
+  // Restore to appropriate view based on session state
+  switch (session!.state) {
+    case 'lobby':
+      showWaiting()
+      break
+    case 'question':
+      // Check if player already answered this question
+      const { data: existingAnswer } = await supabase
+        .from('quiz_answers')
+        .select('*')
+        .eq('participant_id', participant!.id)
+        .eq('question_index', session!.current_question)
+        .single()
+
+      if (existingAnswer) {
+        hasAnswered = true
+        joinViewEl.classList.add('hidden')
+        answeredViewEl.classList.remove('hidden')
+      } else {
+        questionStartTime = new Date(session!.question_started_at!).getTime()
+        hasAnswered = false
+        showQuestion(session!.current_question)
+      }
+      break
+    case 'reveal':
+      joinViewEl.classList.add('hidden')
+      showReveal()
+      break
+    case 'leaderboard':
+    case 'finished':
+      showFinal()
+      break
+    case 'abandoned':
+      showAbandoned()
+      break
+  }
+}
+
 function subscribeToSession() {
   sessionChannel = supabase
     .channel('session')
@@ -222,7 +307,7 @@ function subscribeToSession() {
       },
       (payload) => {
         const newSession = payload.new as QuizSession
-        handleStateChange(session!.state, newSession.state, newSession)
+        handleStateChange(newSession.state, newSession)
         session = newSession
       }
     )
@@ -230,7 +315,6 @@ function subscribeToSession() {
 }
 
 function handleStateChange(
-  _oldState: QuizSession['state'],
   newState: QuizSession['state'],
   newSession: QuizSession
 ) {
@@ -242,7 +326,40 @@ function handleStateChange(
     showReveal()
   } else if (newState === 'leaderboard') {
     showFinal()
+  } else if (newState === 'abandoned') {
+    showAbandoned()
   }
+}
+
+function showAbandoned() {
+  // Hide all views
+  waitingViewEl.classList.add('hidden')
+  questionViewEl.classList.add('hidden')
+  answeredViewEl.classList.add('hidden')
+  revealViewEl.classList.add('hidden')
+  finalViewEl.classList.add('hidden')
+
+  // Show abandoned view
+  const abandonedEl = document.getElementById('abandoned-view')!
+  abandonedEl.classList.remove('hidden')
+
+  // Clear player localStorage
+  localStorage.removeItem(`quiz_player_${session!.id}`)
+
+  cleanup()
+}
+
+function showGameOver(title: string, message: string) {
+  cleanup()
+
+  // Hide join view
+  joinViewEl.classList.add('hidden')
+
+  // Update and show game-over view
+  const gameOverEl = document.getElementById('game-over-view')!
+  document.getElementById('game-over-title')!.textContent = title
+  document.getElementById('game-over-message')!.textContent = message
+  gameOverEl.classList.remove('hidden')
 }
 
 function showQuestion(questionIndex: number) {
@@ -365,6 +482,12 @@ async function showReveal() {
     clearInterval(timerInterval)
     timerInterval = null
   }
+
+  // Reset display to neutral state before showing (prevents stale data flash)
+  document.getElementById('result-icon')!.innerHTML = ''
+  document.getElementById('points-earned')!.textContent = ''
+  document.getElementById('total-score')!.textContent = ''
+  document.getElementById('current-rank')!.textContent = ''
 
   answeredViewEl.classList.add('hidden')
   questionViewEl.classList.add('hidden')

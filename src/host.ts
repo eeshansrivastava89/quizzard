@@ -59,11 +59,152 @@ async function init() {
       throw new Error('No questions found in quiz configuration')
     }
 
+    // Check for existing active session
+    const existingSession = await checkExistingSession()
+    if (existingSession) {
+      showReconnectModal(existingSession)
+      return
+    }
+
     await createSession()
     setupSubscriptions()
   } catch (e) {
     console.error('Failed to initialize:', e)
     alert('Failed to create quiz session: ' + (e instanceof Error ? e.message : 'Unknown error'))
+  }
+}
+
+async function checkExistingSession(): Promise<QuizSession | null> {
+  const saved = localStorage.getItem('quiz_host_session')
+  if (!saved) return null
+
+  try {
+    const { sessionId, hostSecret } = JSON.parse(saved)
+
+    // Fetch session from DB
+    const { data, error } = await supabase
+      .from('quiz_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .eq('host_secret', hostSecret)
+      .single()
+
+    if (error || !data) {
+      localStorage.removeItem('quiz_host_session')
+      return null
+    }
+
+    const sessionData = data as QuizSession
+
+    // Only reconnect if session is active (not finished/abandoned)
+    if (['lobby', 'question', 'reveal', 'leaderboard'].includes(sessionData.state)) {
+      return sessionData
+    }
+
+    // Session is finished or abandoned, clear and start fresh
+    localStorage.removeItem('quiz_host_session')
+    return null
+  } catch {
+    localStorage.removeItem('quiz_host_session')
+    return null
+  }
+}
+
+function showReconnectModal(existingSession: QuizSession) {
+  loadingEl.classList.add('hidden')
+
+  const modal = document.getElementById('reconnect-modal')!
+  const codeEl = document.getElementById('reconnect-code')!
+  const stateEl = document.getElementById('reconnect-state')!
+  const continueBtn = document.getElementById('reconnect-continue') as HTMLButtonElement
+  const abandonBtn = document.getElementById('reconnect-abandon') as HTMLButtonElement
+
+  codeEl.textContent = existingSession.join_code
+  stateEl.textContent = existingSession.state
+
+  modal.classList.remove('hidden')
+
+  continueBtn.onclick = async () => {
+    continueBtn.disabled = true
+    abandonBtn.disabled = true
+    modal.classList.add('hidden')
+    await reconnectToSession(existingSession)
+  }
+
+  abandonBtn.onclick = async () => {
+    continueBtn.disabled = true
+    abandonBtn.disabled = true
+    modal.classList.add('hidden')
+    loadingEl.classList.remove('hidden')
+
+    // Mark session as abandoned
+    await supabase
+      .from('quiz_sessions')
+      .update({ state: 'abandoned' })
+      .eq('id', existingSession.id)
+
+    localStorage.removeItem('quiz_host_session')
+
+    // Create new session
+    await createSession()
+    setupSubscriptions()
+  }
+}
+
+async function reconnectToSession(existingSession: QuizSession) {
+  session = existingSession
+
+  // Fetch participants
+  const { data: participantsData, error: participantsError } = await supabase
+    .from('quiz_participants')
+    .select('*')
+    .eq('session_id', session.id)
+
+  if (participantsError) {
+    console.error('Failed to fetch participants:', participantsError)
+    alert('Could not restore game state. Starting a new game.')
+    localStorage.removeItem('quiz_host_session')
+    window.location.reload()
+    return
+  }
+
+  participants = (participantsData || []) as QuizParticipant[]
+
+  // Fetch answers
+  const { data: answersData, error: answersError } = await supabase
+    .from('quiz_answers')
+    .select('*')
+    .eq('session_id', session.id)
+
+  if (answersError) {
+    console.error('Failed to fetch answers:', answersError)
+    alert('Could not restore game state. Starting a new game.')
+    localStorage.removeItem('quiz_host_session')
+    window.location.reload()
+    return
+  }
+
+  answers = (answersData || []) as QuizAnswer[]
+
+  setupSubscriptions()
+
+  // Hide loading before showing restored view
+  loadingEl.classList.add('hidden')
+
+  // Restore to appropriate view based on state
+  switch (session.state) {
+    case 'lobby':
+      showLobby()
+      break
+    case 'question':
+      showQuestionReconnect()
+      break
+    case 'reveal':
+      showRevealReconnect()
+      break
+    case 'leaderboard':
+      showLeaderboard()
+      break
   }
 }
 
@@ -82,8 +223,12 @@ async function createSession() {
 
   session = data as QuizSession
 
-  // Store host secret in localStorage for reconnection
-  localStorage.setItem(`quiz_host_${session.id}`, session.host_secret)
+  // Store session info in localStorage for reconnection
+  localStorage.setItem('quiz_host_session', JSON.stringify({
+    sessionId: session.id,
+    hostSecret: session.host_secret,
+    joinCode: session.join_code
+  }))
 
   showLobby()
 }
@@ -102,6 +247,9 @@ function showLobby() {
     margin: 0,
     color: { dark: '#000000', light: '#ffffff' }
   })
+
+  // Update participant display (important for reconnect with existing participants)
+  updateParticipantDisplay()
 
   // Start button
   document.getElementById('start-btn')!.addEventListener('click', startQuiz)
@@ -208,17 +356,7 @@ async function updateSessionState(
   session = { ...session!, ...update } as QuizSession
 }
 
-function showQuestion() {
-  // Bounds check for question index
-  if (session!.current_question >= config!.questions.length) {
-    console.error('Invalid question index:', session!.current_question)
-    showLeaderboard()
-    return
-  }
-
-  const question = config!.questions[session!.current_question]
-  const timeMs = getQuestionTime(question, config!)
-
+function displayQuestion(question: Question, answerCount: number) {
   // Hide other views, show question
   lobbyEl.classList.add('hidden')
   revealViewEl.classList.add('hidden')
@@ -235,11 +373,14 @@ function showQuestion() {
   // Image handling
   const imageContainer = document.getElementById('question-image-container')!
   const imageEl = document.getElementById('question-image') as HTMLImageElement
+  const spacer = document.getElementById('question-spacer')!
   if (question.image) {
     imageEl.src = question.image
     imageContainer.classList.remove('hidden')
+    spacer.classList.add('hidden')
   } else {
     imageContainer.classList.add('hidden')
+    spacer.classList.remove('hidden')
   }
 
   // Options
@@ -248,23 +389,114 @@ function showQuestion() {
   })
 
   // Answer count
-  document.getElementById('answer-count')!.textContent = '0'
+  document.getElementById('answer-count')!.textContent = answerCount.toString()
   document.getElementById('total-participants')!.textContent =
     participants.length.toString()
+}
 
-  // Start timer
+function showQuestion() {
+  // Bounds check for question index
+  if (session!.current_question >= config!.questions.length) {
+    console.error('Invalid question index:', session!.current_question)
+    showLeaderboard()
+    return
+  }
+
+  const question = config!.questions[session!.current_question]
+  const timeMs = getQuestionTime(question, config!)
+
+  displayQuestion(question, 0)
   startTimer(timeMs)
-
-  // Play countdown sound
   sounds.play('countdown')
 }
 
-function startTimer(durationMs: number) {
+function showQuestionReconnect() {
+  // Bounds check for question index
+  if (session!.current_question >= config!.questions.length) {
+    console.error('Invalid question index:', session!.current_question)
+    showLeaderboard()
+    return
+  }
+
+  const question = config!.questions[session!.current_question]
+  const totalTimeMs = getQuestionTime(question, config!)
+
+  // Calculate remaining time
+  const startedAt = new Date(session!.question_started_at!).getTime()
+  const remainingMs = Math.max(0, totalTimeMs - (Date.now() - startedAt))
+
+  // If time already expired, go to reveal
+  if (remainingMs <= 0) {
+    showReveal()
+    return
+  }
+
+  const currentQAnswers = answers.filter(
+    (a) => a.question_index === session!.current_question
+  )
+
+  displayQuestion(question, currentQAnswers.length)
+  startTimer(totalTimeMs, startedAt)
+  sounds.play('countdown')
+}
+
+function renderAnswerDistribution(question: Question, questionAnswers: QuizAnswer[]) {
+  const distributionEl = document.getElementById('answer-distribution')!
+  const colors = ['answer-red', 'answer-blue', 'answer-yellow', 'answer-green']
+
+  distributionEl.innerHTML = question.options
+    .map((option, i) => {
+      const count = questionAnswers.filter((a) => a.selected_option === i).length
+      const percent =
+        questionAnswers.length > 0 ? (count / questionAnswers.length) * 100 : 0
+      const isCorrect = i === question.correct
+
+      return `
+        <div class="flex items-center gap-4">
+          <div class="w-8 text-right">${count}</div>
+          <div class="flex-1 h-12 bg-gray-800 rounded-lg overflow-hidden relative">
+            <div class="${colors[i]} h-full transition-all duration-500 ${
+        isCorrect ? 'ring-4 ring-white' : 'opacity-50'
+      }" style="width: ${percent}%"></div>
+            <span class="absolute inset-0 flex items-center px-4 font-bold ${
+              isCorrect ? '' : 'opacity-50'
+            }">${option} ${isCorrect ? '✓' : ''}</span>
+          </div>
+        </div>
+      `
+    })
+    .join('')
+}
+
+function setupNextButton() {
+  const nextBtn = document.getElementById('next-btn')!
+  const isLastQuestion =
+    session!.current_question >= config!.questions.length - 1
+
+  nextBtn.textContent = isLastQuestion ? 'SHOW RESULTS' : 'NEXT QUESTION'
+  nextBtn.onclick = isLastQuestion ? showLeaderboard : nextQuestion
+}
+
+function showRevealReconnect() {
+  questionViewEl.classList.add('hidden')
+  revealViewEl.classList.remove('hidden')
+
+  const question = config!.questions[session!.current_question]
+  const questionAnswers = answers.filter(
+    (a) => a.question_index === session!.current_question
+  )
+
+  document.getElementById('reveal-question')!.textContent = question.text
+  renderAnswerDistribution(question, questionAnswers)
+  setupNextButton()
+}
+
+function startTimer(totalTimeMs: number, startedAt?: number) {
   const timerEl = document.getElementById('timer')!
   const timerBarEl = document.getElementById('timer-bar')!
-  const endTime = Date.now() + durationMs
+  const endTime = startedAt ? startedAt + totalTimeMs : Date.now() + totalTimeMs
 
-  // Clear existing timer properly
+  // Clear existing timer
   if (timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
@@ -273,7 +505,7 @@ function startTimer(durationMs: number) {
   timerInterval = setInterval(() => {
     const remaining = Math.max(0, endTime - Date.now())
     const seconds = Math.ceil(remaining / 1000)
-    const percent = (remaining / durationMs) * 100
+    const percent = (remaining / totalTimeMs) * 100
 
     timerEl.textContent = seconds.toString()
     timerBarEl.style.width = `${percent}%`
@@ -310,43 +542,9 @@ async function showReveal() {
   // Calculate points and update participants
   await calculateAndUpdateScores(question, questionAnswers)
 
-  // Show answer distribution
-  const distributionEl = document.getElementById('answer-distribution')!
-  const colors = ['answer-red', 'answer-blue', 'answer-yellow', 'answer-green']
-
-  distributionEl.innerHTML = question.options
-    .map((option, i) => {
-      const count = questionAnswers.filter((a) => a.selected_option === i).length
-      const percent =
-        questionAnswers.length > 0 ? (count / questionAnswers.length) * 100 : 0
-      const isCorrect = i === question.correct
-
-      return `
-        <div class="flex items-center gap-4">
-          <div class="w-8 text-right">${count}</div>
-          <div class="flex-1 h-12 bg-gray-800 rounded-lg overflow-hidden relative">
-            <div class="${colors[i]} h-full transition-all duration-500 ${
-        isCorrect ? 'ring-4 ring-white' : 'opacity-50'
-      }" style="width: ${percent}%"></div>
-            <span class="absolute inset-0 flex items-center px-4 font-bold ${
-              isCorrect ? '' : 'opacity-50'
-            }">${option} ${isCorrect ? '✓' : ''}</span>
-          </div>
-        </div>
-      `
-    })
-    .join('')
-
-  // Update session state
+  renderAnswerDistribution(question, questionAnswers)
   await updateSessionState('reveal')
-
-  // Next button
-  const nextBtn = document.getElementById('next-btn')!
-  const isLastQuestion =
-    session!.current_question >= config!.questions.length - 1
-
-  nextBtn.textContent = isLastQuestion ? 'SHOW RESULTS' : 'NEXT QUESTION'
-  nextBtn.onclick = isLastQuestion ? showLeaderboard : nextQuestion
+  setupNextButton()
 }
 
 async function calculateAndUpdateScores(
@@ -491,6 +689,7 @@ async function showLeaderboard() {
     window.location.href = '/host.html'
   }
 
-  // Mark session as finished
+  // Mark session as finished and clear localStorage
   await updateSessionState('finished')
+  localStorage.removeItem('quiz_host_session')
 }

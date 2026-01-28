@@ -11,8 +11,32 @@
       <!-- Loading State -->
       <div id="loading" class="flex items-center justify-center min-h-screen">
         <div class="text-center">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
           <p class="text-gray-400">Creating quiz session...</p>
+        </div>
+      </div>
+
+      <!-- Reconnect Modal -->
+      <div id="reconnect-modal" class="hidden min-h-screen flex items-center justify-center">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-md text-center">
+          <h2 class="text-2xl font-bold text-amber-400 mb-4">Active Game Found</h2>
+          <p class="text-gray-400 mb-2">You have an existing game:</p>
+          <p class="text-3xl font-mono font-bold text-white mb-2" id="reconnect-code"></p>
+          <p class="text-gray-400 mb-6">Status: <span id="reconnect-state" class="text-white"></span></p>
+          <div class="flex gap-4 justify-center">
+            <button
+              id="reconnect-continue"
+              class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              Continue Game
+            </button>
+            <button
+              id="reconnect-abandon"
+              class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              Abandon & Start New
+            </button>
+          </div>
         </div>
       </div>
 
@@ -21,7 +45,7 @@
         <div class="flex flex-col lg:flex-row gap-12 w-full max-w-6xl">
           <!-- Left Side: QR, Code, Start -->
           <div class="flex flex-col items-center justify-center lg:w-1/2">
-            <h1 class="text-4xl font-bold text-purple-500 mb-8">Quiz Time!</h1>
+            <h1 class="text-4xl font-bold text-amber-400 mb-8">Quiz Time!</h1>
 
             <!-- QR Code -->
             <div id="qr-container" class="bg-white p-4 rounded-2xl mb-6">
@@ -52,28 +76,31 @@
       </div>
 
       <!-- Question State -->
-      <div id="question-view" class="hidden min-h-screen flex flex-col">
+      <div id="question-view" class="hidden h-screen flex flex-col p-4">
         <!-- Header -->
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-4 shrink-0">
           <span class="text-gray-400">Question <span id="q-number">1</span>/<span id="q-total">5</span></span>
           <span class="text-2xl font-bold" id="timer">20</span>
         </div>
 
         <!-- Timer Bar -->
-        <div class="w-full bg-gray-800 rounded-full h-2 mb-8">
+        <div class="w-full bg-gray-800 rounded-full h-2 mb-4 shrink-0">
           <div id="timer-bar" class="timer-bar" style="width: 100%"></div>
         </div>
 
         <!-- Question Text -->
-        <h2 id="question-text" class="text-3xl md:text-5xl font-bold text-center mb-8"></h2>
+        <h2 id="question-text" class="text-3xl md:text-5xl font-bold text-center mb-4 shrink-0"></h2>
 
-        <!-- Question Image (if any) -->
-        <div id="question-image-container" class="hidden flex justify-center mb-8">
-          <img id="question-image" class="max-h-96 max-w-full object-contain rounded-xl" />
+        <!-- Question Image (if any) - grows to fill available space -->
+        <div id="question-image-container" class="hidden flex-1 flex items-center justify-center min-h-0 mb-4">
+          <img id="question-image" class="max-h-full max-w-full object-contain rounded-xl" />
         </div>
 
+        <!-- Spacer when no image -->
+        <div id="question-spacer" class="flex-1"></div>
+
         <!-- Answer Options -->
-        <div class="grid grid-cols-2 gap-4 mt-auto">
+        <div class="grid grid-cols-2 gap-4 shrink-0">
           <div id="option-0" class="answer-red rounded-xl p-6 text-xl md:text-2xl font-bold flex items-center">
             <span class="mr-4 text-3xl">&#9650;</span>
             <span class="option-text"></span>
@@ -108,7 +135,7 @@
         <!-- Next Button -->
         <button
           id="next-btn"
-          class="bg-purple-600 hover:bg-purple-700 text-white text-2xl font-bold py-4 px-12 rounded-xl transition-all"
+          class="btn-gold text-white text-2xl font-bold py-4 px-12 rounded-xl transition-all"
         >
           NEXT QUESTION
         </button>
@@ -116,7 +143,7 @@
 
       <!-- Leaderboard State -->
       <div id="leaderboard-view" class="hidden min-h-screen flex flex-col items-center justify-center">
-        <h1 class="text-4xl font-bold text-purple-500 mb-12">FINAL RESULTS</h1>
+        <h1 class="text-4xl font-bold text-amber-400 mb-12">FINAL RESULTS</h1>
 
         <!-- Podium -->
         <div id="podium" class="flex items-end justify-center gap-4 mb-12"></div>
@@ -127,7 +154,7 @@
         <!-- New Game Button -->
         <button
           id="new-game-btn"
-          class="mt-8 bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+          class="mt-8 btn-gold text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
         >
           HOST NEW GAME
         </button>

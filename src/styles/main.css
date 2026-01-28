@@ -2,9 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Starbucks brand colors */
+:root {
+  --starbucks-green: #1E3932;
+  --starbucks-gold: #CBA258;
+  --starbucks-gold-hover: #B8914A;
+}
+
 /* Base styles */
 body {
-  @apply bg-gray-900 text-white min-h-screen;
+  background-color: var(--starbucks-green);
+  @apply text-white min-h-screen;
 }
 
 /* Answer button colors */
@@ -41,9 +49,22 @@ body {
   animation: confetti 3s ease-out forwards;
 }
 
+/* Starbucks gold accent button */
+.btn-gold {
+  background-color: var(--starbucks-gold);
+  @apply text-gray-900 font-bold rounded-xl transition-all;
+}
+.btn-gold:hover {
+  background-color: var(--starbucks-gold-hover);
+}
+.btn-gold:disabled {
+  @apply bg-gray-700 text-gray-400 cursor-not-allowed;
+}
+
 /* Timer styles */
 .timer-bar {
-  @apply h-2 bg-purple-600 rounded-full transition-all duration-100;
+  background-color: var(--starbucks-gold);
+  @apply h-2 rounded-full transition-all duration-100;
 }
 
 .timer-bar.warning {

@@ -10,7 +10,7 @@ export interface QuizSession {
   id: string
   join_code: string
   host_secret: string
-  state: 'lobby' | 'question' | 'reveal' | 'leaderboard' | 'finished'
+  state: 'lobby' | 'question' | 'reveal' | 'leaderboard' | 'finished' | 'abandoned'
   current_question: number
   question_started_at: string | null
   created_at: string

@@ -10,7 +10,7 @@
     <div id="app" class="min-h-screen p-4 flex flex-col">
       <!-- Enter Code State (when no code in URL) -->
       <div id="enter-code-view" class="hidden flex-1 flex flex-col items-center justify-center">
-        <h1 class="text-5xl md:text-7xl font-bold text-purple-500 mb-2">Quiz Time</h1>
+        <h1 class="text-5xl md:text-7xl font-bold mb-2" style="color: var(--starbucks-gold)">Quiz Time</h1>
         <p class="text-gray-400 mb-12">Enter the game code to join</p>
 
         <div class="w-full max-w-sm">
@@ -19,11 +19,12 @@
             type="text"
             placeholder="Enter game code"
             maxlength="6"
-            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-2xl text-center uppercase tracking-widest focus:outline-none focus:border-purple-500 mb-4"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-2xl text-center uppercase tracking-widest focus:outline-none mb-4"
+            style="--tw-ring-color: var(--starbucks-gold)"
           />
           <button
             id="code-submit-btn"
-            class="w-full bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+            class="w-full btn-gold text-xl py-4 px-8"
           >
             JOIN GAME
           </button>
@@ -33,22 +34,23 @@
 
       <!-- Join State (when code is provided) -->
       <div id="join-view" class="hidden flex-1 flex flex-col items-center justify-center">
-        <h1 class="text-3xl font-bold text-purple-500 mb-2">Join Quiz</h1>
-        <p class="text-gray-400 mb-8">Game code: <span id="game-code" class="font-mono text-white"></span></p>
+        <h1 class="text-4xl font-bold italic mb-2" style="color: var(--starbucks-gold)">Join Quiz</h1>
+        <p class="text-gray-400 mb-8">Game code: <span id="game-code" class="font-mono text-white font-bold"></span></p>
 
         <input
           id="player-name"
           type="text"
           placeholder="Enter your name"
           maxlength="20"
-          class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-xl text-center focus:outline-none focus:border-purple-500 mb-4"
+          class="w-full max-w-sm bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 text-xl text-center focus:outline-none mb-4"
         />
 
         <button
           id="join-btn"
-          class="w-full max-w-sm bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+          class="w-full max-w-sm btn-gold text-2xl py-4 px-8 flex items-center justify-center gap-3"
         >
-          JOIN GAME
+          <span>START GAME</span>
+          <span class="text-3xl">→</span>
         </button>
 
         <p id="join-error" class="text-red-500 text-center mt-4 hidden"></p>
@@ -57,7 +59,7 @@
       <!-- Waiting State -->
       <div id="waiting-view" class="hidden flex-1 flex flex-col items-center justify-center">
         <div class="animate-pulse-scale">
-          <div class="w-24 h-24 bg-purple-600 rounded-full flex items-center justify-center mb-8">
+          <div class="w-24 h-24 btn-gold rounded-full flex items-center justify-center mb-8">
             <span class="text-4xl">&#128640;</span>
           </div>
         </div>
@@ -124,7 +126,7 @@
           Total: <span id="total-score" class="text-white font-bold"></span> points
         </p>
         <p class="text-gray-400">
-          Rank: <span id="current-rank" class="text-purple-500 font-bold"></span>
+          Rank: <span id="current-rank" class="text-amber-400 font-bold"></span>
         </p>
       </div>
 
@@ -135,16 +137,42 @@
 
         <h1 class="text-3xl font-bold mb-2">Game Over!</h1>
 
-        <div class="text-6xl font-bold text-purple-500 mb-2" id="final-rank"></div>
+        <div class="text-6xl font-bold text-amber-400 mb-2" id="final-rank"></div>
         <p class="text-gray-400 mb-4">
           Final Score: <span id="final-score" class="text-white font-bold"></span>
         </p>
 
         <button
           id="play-again-btn"
-          class="mt-8 bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+          class="mt-8 btn-gold  text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
         >
           PLAY AGAIN
+        </button>
+      </div>
+
+      <!-- Abandoned View -->
+      <div id="abandoned-view" class="hidden flex-1 flex flex-col items-center justify-center">
+        <div class="text-6xl mb-6">😔</div>
+        <h1 class="text-3xl font-bold mb-2">Game Ended</h1>
+        <p class="text-gray-400 mb-8">The host has left the game.</p>
+        <button
+          onclick="window.location.href='/play.html'"
+          class="btn-gold  text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+        >
+          JOIN ANOTHER GAME
+        </button>
+      </div>
+
+      <!-- Game Over View (for finished/abandoned sessions on page load) -->
+      <div id="game-over-view" class="hidden flex-1 flex flex-col items-center justify-center">
+        <div class="text-6xl mb-6">🏁</div>
+        <h1 id="game-over-title" class="text-3xl font-bold mb-2">Game has ended</h1>
+        <p id="game-over-message" class="text-gray-400 mb-8">This quiz has already finished.</p>
+        <button
+          onclick="window.location.href='/play.html'"
+          class="btn-gold  text-white text-xl font-bold py-3 px-8 rounded-xl transition-all"
+        >
+          JOIN NEW GAME
         </button>
       </div>
     </div>
