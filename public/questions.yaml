@@ -1,6 +1,6 @@
 quiz:
   title: "Starbucks Trivia Quiz"
-  default_time_seconds: 20
+  default_time_seconds: 15
   base_points: 1000
 
 questions:
