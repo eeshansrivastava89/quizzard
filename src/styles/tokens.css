@@ -1,0 +1,71 @@
+/* SYNCED from datascienceapps/src/styles/tokens.css — do not edit here */
+
+/* SHARED DESIGN TOKENS — coffee palette, shadcn naming
+ * Canonical source: datascienceapps/src/styles/tokens.css
+ * Copied to other portfolio sites via Claude sync.
+ * Do NOT define fonts here — each site has its own font config. */
+
+:root,
+[data-theme='light'] {
+	--background: #f5f3f0;
+	--foreground: #3c3226;
+	--card: #ffffff;
+	--card-raised: #faf8f5;
+	--card-foreground: #3c3226;
+	--primary: #5c3d2e;
+	--primary-foreground: #f5f3f0;
+	--primary-rgb: 92, 61, 46;
+	--secondary: #ede6de;
+	--secondary-foreground: #3c3226;
+	--muted: #8a7d6f;
+	--muted-foreground: #6b5e50;
+	--accent: #ede6de;
+	--accent-foreground: #5c3d2e;
+	--popover: #ffffff;
+	--popover-foreground: #3c3226;
+	--destructive: #d20f39;
+	--destructive-foreground: #f5f3f0;
+	--border: #d9d2c9;
+	--input: #ebe5dc;
+	--ring: #5c3d2e;
+	--green: #16a34a;
+	--blue: #1a5bdb;
+	--red: #d20f39;
+	--shadow: 0 1px 3px rgba(60, 50, 38, 0.06), 0 4px 12px rgba(60, 50, 38, 0.04);
+	--shadow-hover: 0 4px 12px rgba(60, 50, 38, 0.1), 0 8px 24px rgba(60, 50, 38, 0.06);
+	--overlay: rgba(60, 50, 38, 0.4);
+	--radius-lg: 14px;
+	--radius-sm: 8px;
+	--substack: #ff6719;
+}
+
+[data-theme='dark'] {
+	--background: #1c1816;
+	--foreground: #e0d6cc;
+	--card: #2a2420;
+	--card-raised: #332c26;
+	--card-foreground: #e0d6cc;
+	--primary: #c9a882;
+	--primary-foreground: #1c1816;
+	--primary-rgb: 201, 168, 130;
+	--secondary: #2e261f;
+	--secondary-foreground: #e0d6cc;
+	--muted: #8a7d6f;
+	--muted-foreground: #b0a596;
+	--accent: #2e261f;
+	--accent-foreground: #c9a882;
+	--popover: #2a2420;
+	--popover-foreground: #e0d6cc;
+	--destructive: #f38ba8;
+	--destructive-foreground: #1c1816;
+	--border: #3d342c;
+	--input: #4a3f35;
+	--ring: #c9a882;
+	--green: #16a34a;
+	--blue: #89b4fa;
+	--red: #f38ba8;
+	--shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+	--shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+	--overlay: rgba(0, 0, 0, 0.6);
+	--substack: #ff6719;
+}

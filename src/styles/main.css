@@ -1,8 +1,10 @@
+@import './tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Starbucks brand colors */
+/* Starbucks brand colors — site-specific, not in tokens.css */
 :root {
   --starbucks-green: #1E3932;
   --starbucks-gold: #CBA258;
